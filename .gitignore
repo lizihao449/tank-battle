@@ -1,0 +1,14 @@
+# 依赖（本项目其实一个都没有，先占着位置）
+node_modules/
+package-lock.json
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 日志
+*.log
+npm-debug.log*

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#080b14">
+<meta name="description" content="坦克大战 —— 纯 HTML5 + Canvas 单页游戏，零依赖、零构建，双击即玩。">
+<title>坦克大战 · TANK BATTLE</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23080b14'/%3E%3Crect x='5' y='11' width='22' height='14' rx='3' fill='%23ffd54a'/%3E%3Crect x='14' y='3' width='4' height='10' fill='%23ffd54a'/%3E%3Crect x='3' y='13' width='4' height='10' fill='%2338e8c8'/%3E%3Crect x='25' y='13' width='4' height='10' fill='%2338e8c8'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="cabinet">
+
+  <header class="topbar">
+    <h1 class="logo">
+      <span class="logo-mark" aria-hidden="true"></span>
+      坦克大战
+      <em>TANK BATTLE</em>
+    </h1>
+    <div class="topbar-tools">
+      <button id="btn-sound" class="icon-btn" type="button" title="静音 (M)" aria-label="音效开关">🔊</button>
+      <button id="btn-pause" class="icon-btn" type="button" title="暂停 (P)" aria-label="暂停">⏸</button>
+    </div>
+  </header>
+
+  <main class="stage">
+
+    <!-- ================= 战场 ================= -->
+    <div class="screen-wrap">
+      <canvas id="game" width="512" height="512" aria-label="坦克大战游戏画面"></canvas>
+      <div class="scanlines" aria-hidden="true"></div>
+      <div class="banner" id="banner" aria-live="polite"></div>
+
+      <!-- 各种覆盖层 -->
+      <div class="overlay" id="overlay">
+
+        <!-- 标题页 -->
+        <section class="screen" id="screen-title">
+          <div class="panel">
+            <p class="kicker">HTML5 · CANVAS · 零依赖</p>
+            <h2 class="panel-title">坦克大战</h2>
+            <p class="panel-sub">守住基地，歼灭全部敌军坦克</p>
+
+            <div class="kv">
+              <div><span>历史最高分</span><b id="title-best">0</b></div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-start" type="button">开始游戏 <kbd>Enter</kbd></button>
+
+            <ul class="tips">
+              <li><b>WASD</b> / <b>方向键</b> 移动</li>
+              <li><b>空格</b> / <b>J</b> 开火</li>
+              <li><b>P</b> 暂停 · <b>M</b> 静音 · <b>R</b> 重开</li>
+            </ul>
+            <p class="fineprint">打掉<b class="hot">闪红</b>的敌方坦克会掉落补给：火力升级 / 全屏爆破 / 无敌护盾 / 钢铁基地 / 额外生命 / 时间冻结</p>
+          </div>
+        </section>
+
+        <!-- 暂停 -->
+        <section class="screen" id="screen-pause">
+          <div class="panel">
+            <h2 class="panel-title small">已暂停</h2>
+            <div class="kv">
+              <div><span>当前得分</span><b id="pause-score">0</b></div>
+            </div>
+            <button class="btn btn-primary" id="btn-resume" type="button">继续 <kbd>P</kbd></button>
+            <button class="btn btn-ghost" id="btn-restart" type="button">重新开始 <kbd>R</kbd></button>
+          </div>
+        </section>
+
+        <!-- 过关 -->
+        <section class="screen" id="screen-clear">
+          <div class="panel">
+            <p class="kicker">STAGE CLEAR</p>
+            <h2 class="panel-title" id="clear-title">关卡完成</h2>
+            <p class="panel-sub" id="clear-sub"></p>
+            <div class="kv">
+              <div><span>过关奖励</span><b id="clear-bonus">+0</b></div>
+              <div><span>累计得分</span><b id="clear-score">0</b></div>
+            </div>
+            <button class="btn btn-primary" id="btn-next" type="button">下一关 ▶</button>
+          </div>
+        </section>
+
+        <!-- 失败 -->
+        <section class="screen" id="screen-over">
+          <div class="panel">
+            <p class="kicker danger">GAME OVER</p>
+            <h2 class="panel-title" id="over-reason">阵地失守</h2>
+            <div class="kv">
+              <div><span>本局得分</span><b id="over-score">0</b></div>
+              <div><span>击毁坦克</span><b id="over-kills">0</b></div>
+              <div><span>到达关卡</span><b id="over-stage">1</b></div>
+              <div><span>历史最高分</span><b id="over-best">0</b></div>
+            </div>
+            <button class="btn btn-primary" id="btn-restart2" type="button" onclick="Game.startRun()">再来一局 <kbd>R</kbd></button>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- ================= 侧栏 ================= -->
+    <aside class="hud">
+      <div class="hud-block">
+        <div class="hud-label">关卡 STAGE</div>
+        <div class="hud-value" id="hud-level">1</div>
+      </div>
+
+      <div class="hud-block">
+        <div class="hud-label">得分 SCORE</div>
+        <div class="hud-value" id="hud-score">0</div>
+        <div class="hud-sub">最高 <span id="hud-best">0</span></div>
+      </div>
+
+      <div class="hud-block">
+        <div class="hud-label">生命 LIVES</div>
+        <div class="hud-value accent-red" id="hud-lives">×3</div>
+      </div>
+
+      <div class="hud-block">
+        <div class="hud-label">剩余敌人 ENEMY</div>
+        <div class="enemy-bar" id="hud-enemies"></div>
+      </div>
+
+      <div class="hud-block">
+        <div class="hud-label">火力 POWER</div>
+        <div class="hud-value accent-gold" id="hud-power">☆☆☆</div>
+      </div>
+
+      <div class="hud-help">
+        <p><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动</p>
+        <p><kbd>空格</kbd> 开火</p>
+        <p><kbd>P</kbd> 暂停 · <kbd>M</kbd> 静音</p>
+        <p><kbd>R</kbd> 重新开始</p>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- ================= 触屏操作 ================= -->
+  <div class="touch" id="touch">
+    <div class="dpad">
+      <button class="dbtn up"    type="button" data-dir="up"    aria-label="上">▲</button>
+      <button class="dbtn left"  type="button" data-dir="left"  aria-label="左">◀</button>
+      <button class="dbtn down"  type="button" data-dir="down"  aria-label="下">▼</button>
+      <button class="dbtn right" type="button" data-dir="right" aria-label="右">▶</button>
+    </div>
+    <button class="fire-btn" type="button" data-fire aria-label="开火">开火</button>
+  </div>
+
+  <footer class="foot">
+    <span>用 Canvas 手搓的坦克大战 · 无任何外部资源</span>
+  </footer>
+
+</div>
+
+<script src="js/audio.js"></script>
+<script src="js/input.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
